@@ -45,11 +45,8 @@ void *network_thread_func()
 		FD_SET(sd, &readfds);
 		n = sd + 1;
 		res = select(n, &readfds, NULL, NULL, &timeout);
-		int res2 =  WSAGetLastError();
 		if (res == -1) {
 		    perror("select");
-		    printf("Last WSA error: %d\n", res2);
-		    stop = 1;
 		}
 		else if (res == 0)
 		{

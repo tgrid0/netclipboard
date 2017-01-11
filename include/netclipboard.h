@@ -24,7 +24,7 @@
 
 pthread_mutex_t curr_clip_lock;
 
-volatile SOCKET sd;							/* Socket descriptor of server */
+SOCKET sd;							/* Socket descriptor of server */
 byte stop;
 
 struct sockaddr_in server;			/* Information about the server */
