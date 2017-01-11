@@ -16,6 +16,7 @@
 	#include <sys/socket.h>
 	#include <arpa/inet.h>
 	#include <unistd.h>
+	#include <netdb.h>
 
 	typedef int SOCKET;
 #endif
@@ -34,7 +35,6 @@ byte stop;
 
 struct sockaddr_in host;			/* Information about the server */
 struct sockaddr_in remote;			/* Information about the client */
-struct hostent *hp;					/* Information about this computer */
 char host_name[256];				/* Name of the server */
 char password[PASSWD_SIZE];			/* Sort of security */
 
@@ -46,6 +46,8 @@ int get_line(char *prmpt, char *buff, size_t sz);
 int sock_init();
 
 int sock_quit();
+
+void sock_close();
 
 void *network_thread_func();
 

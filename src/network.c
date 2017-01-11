@@ -19,6 +19,15 @@ int sock_quit()
 	#endif
 }
 
+void sock_close(SOCKET s)
+{
+#ifdef _WIN32
+	closesocket(s);
+#else
+	close(s);
+#endif
+}
+
 void *network_thread_func()
 {
 	char curr_clip[BUFFER_SIZE] = "";

@@ -64,15 +64,22 @@ int main(int argc, char *argv[])
 
 	remote.sin_family = AF_INET;
 	host.sin_port = htons(remote_port);
-
+#ifdef _WIN32
 	remote.sin_addr.s_net = (unsigned char)b1;
 	remote.sin_addr.s_host = (unsigned char)b2;
 	remote.sin_addr.s_lh = (unsigned char)b3;
 	remote.sin_addr.s_impno = (unsigned char)b4;
-
+#else
+	char addr[32];
+	sprintf(addr, "%d.%d.%d.%d", b1, b2, b3, b4);
+	inet_aton(addr, &remote.sin_addr.s_addr);
+	memset(&addr[0], 0, sizeof(addr));
+	sprintf(addr, "%d.%d.%d.%d", a1, a2, a3, a4);
+#endif
 	/* Set address automatically if desired */
 	if (argc == 5)
 	{
+		struct hostent *hp;
 		/* Get host name of this computer */
 		gethostname(host_name, sizeof(host_name));
 		hp = gethostbyname(host_name);
@@ -81,31 +88,39 @@ int main(int argc, char *argv[])
 		if (hp == NULL)
 		{
 			fprintf(stderr, "Could not get host name.\n");
-			closesocket(sd);
+			sock_close(sd);
 			sock_quit();
 			exit(0);
 		}
 
 		/* Assign the address */
+#ifdef _WIN32
 		host.sin_addr.s_net = hp->h_addr_list[0][0];
 		host.sin_addr.s_host = hp->h_addr_list[0][1];
 		host.sin_addr.s_lh = hp->h_addr_list[0][2];
 		host.sin_addr.s_impno = hp->h_addr_list[0][3];
+#else
+		inet_aton(hp->h_addr_list[0], &host.sin_addr.s_addr);
+#endif
 	}
 	/* Otherwise assign it manually */
 	else
 	{
+#ifdef _WIN32
 		host.sin_addr.s_net = (unsigned char)a1;
 		host.sin_addr.s_host = (unsigned char)a2;
 		host.sin_addr.s_lh = (unsigned char)a3;
 		host.sin_addr.s_impno = (unsigned char)a4;
+#else
+		inet_aton(addr, &host.sin_addr.s_addr);
+#endif
 	}
 
 	/* Bind address to socket */
 	if (bind(sd, (struct sockaddr *)&host, sizeof(struct sockaddr_in)) == -1)
 	{
 		fprintf(stderr, "Could not bind name to socket.\n");
-		closesocket(sd);
+		sock_close(sd);
 		sock_quit();
 		exit(0);
 	}
@@ -145,7 +160,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	closesocket(sd);
+	sock_close(sd);
 	sock_quit();
 
     return 0;
