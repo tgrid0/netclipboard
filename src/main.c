@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 #else
 	char addr[32];
 	sprintf(addr, "%d.%d.%d.%d", b1, b2, b3, b4);
-	inet_aton(addr, &(remote.sin_addr.s_addr));
+	inet_aton(addr, &(remote.sin_addr));
 	memset(&addr[0], 0, sizeof(addr));
 	sprintf(addr, "%d.%d.%d.%d", a1, a2, a3, a4);
 #endif
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 		host.sin_addr.s_lh = hp->h_addr_list[0][2];
 		host.sin_addr.s_impno = hp->h_addr_list[0][3];
 #else
-		inet_aton(hp->h_addr_list[0], &(host.sin_addr.s_addr));
+		inet_aton(hp->h_addr_list[0], &(host.sin_addr));
 #endif
 	}
 	/* Otherwise assign it manually */
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 		host.sin_addr.s_lh = (unsigned char)a3;
 		host.sin_addr.s_impno = (unsigned char)a4;
 #else
-		inet_aton(addr, &(host.sin_addr.s_addr));
+		inet_aton(addr, &(host.sin_addr));
 #endif
 	}
 

@@ -31,7 +31,7 @@ typedef struct clip_packet
 } clip_packet_t;
 
 SOCKET sd;							/* Socket descriptor of server */
-byte stop;
+char stop;
 
 struct sockaddr_in host;			/* Information about the server */
 struct sockaddr_in remote;			/* Information about the client */
