@@ -1,126 +1,45 @@
-#ifdef _MSC_VER
-#  define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <pthread.h>
-
-#ifdef _WIN32
-	#include <winsock.h>
-#else
-	#include <sys/socket.h>
-	#include <arpa/inet.h>
-	#include <unistd.h>
-
-	typedef int SOCKET;
-#endif
-
-#include "libclipboard.h"
-
-int sock_init()
-{
-	#ifdef _WIN32
-		WSADATA w;
-		return (0 == WSAStartup(MAKEWORD(1,1), &w));
-	#else
-		return 0;
-	#endif
-}
-
-int sock_quit()
-{
-	#ifdef _WIN32
-		return WSACleanup();
-	#else
-		return 0;
-	#endif
-}
+#include "netclipboard.h"
 
 void usage()
 {
-	fprintf(stderr, "Usage: netclipboard server_address port\n");
+	fprintf(stderr, "Usage: netclipboard [server_address] port\n");
 	exit(0);
 }
 
-#define BUFFER_SIZE 4096
-
-SOCKET sd;							/* Socket descriptor of server */
-unsigned short port_number;			/* Port number to use */
-int a1, a2, a3, a4;					/* Components of address in xxx.xxx.xxx.xxx form */
-byte stop = 0;
-
-struct sockaddr_in server;			/* Information about the server */
-struct sockaddr_in client;			/* Information about the client */
-struct hostent *hp;					/* Information about this computer */
-char host_name[256];				/* Name of the server */
-
-void *receiver_thread_func(){
-	fd_set readfds;
-	SOCKET n;
-	char buffer[BUFFER_SIZE];
-	int client_length;
-	int res;
-	struct timeval timeout;
-	timeout.tv_sec = 10;
-	timeout.tv_usec = 0;
-
-	FD_ZERO(&readfds);
-	FD_SET(sd, &readfds);
-
-	client_length = (int)sizeof(struct sockaddr_in);
-
-	n = sd + 1;
+void *clipboard_reader_func()
+{
+	clipboard_c *cb = clipboard_new(NULL);
+	if (cb == NULL) {
+		printf("Clipboard initialisation failed!\n");
+		return NULL;
+	}
 
 	while (!stop)
 	{
-		res = select(n, &readfds, NULL, NULL, &timeout);
-		if (res == -1) {
-		    perror("select");
-		} else if (res == 0) {
-		    // printf("Timeout occurred!  No data after 10 seconds.\n");
-			/* Continue silently */
-		} else {
-		    if (FD_ISSET(sd, &readfds)) {
-		    	printf("Receiving...\n");
-				/* Receive bytes from client */
-				res = recvfrom(sd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client, &client_length);
-				if (res < 0)
-				{
-					fprintf(stderr, "Could not receive datagram.\n");
-				}
-				printf("Message received: '%s'\n", buffer);
-		    }
-
+		pthread_mutex_lock(&curr_clip_lock);
+		char *text = clipboard_text_ex(cb, NULL, 0);
+		if (text != NULL)
+		{
+			if (strncmp(text, curr_clip, BUFFER_SIZE))
+			{
+				strncpy(curr_clip, text, BUFFER_SIZE);
+				/* Send to clients */
+			}
+			free(text);
 		}
+		pthread_mutex_unlock(&curr_clip_lock);
+		sleep(1);
 	}
+
+	clipboard_free(cb);
 	return NULL;
 }
 
-static int get_line(char *prmpt, char *buff, size_t sz) {
-    int ch, extra;
+int main(int argc, char *argv[])
+{
+	unsigned short port_number;			/* Port number to use */
+	int a1, a2, a3, a4;					/* Components of address in xxx.xxx.xxx.xxx form */
 
-    if (prmpt != NULL) {
-        printf ("%s", prmpt);
-        fflush (stdout);
-    }
-    if (fgets (buff, sz, stdin) == NULL)
-        return -1;
-
-    if (buff[strlen(buff)-1] != '\n') {
-        extra = 0;
-        while (((ch = getchar()) != '\n') && (ch != EOF))
-            extra = 1;
-        return (extra == 1) ? -2 : 0;
-    }
-
-    buff[strlen(buff)-1] = '\0';
-    return 0;
-}
-
-int main(int argc, char *argv[]) {
 	/* Interpret command line */
 	if (argc == 2)
 	{
@@ -222,11 +141,19 @@ int main(int argc, char *argv[]) {
 	int res;
 	pthread_t receiver_thread;
 
+	pthread_t clipboard_reader;
+
 	if(pthread_create(&receiver_thread, NULL, receiver_thread_func, (void*)NULL))
 	{
-		fprintf(stderr, "Error creating thread\n");
+		fprintf(stderr, "Error creating receiver_thread\n");
 		return 0;
 	}
+
+	if(pthread_create(&clipboard_reader, NULL, clipboard_reader_func, (void*)NULL))
+		{
+			fprintf(stderr, "Error creating clipboard_reader\n");
+			return 0;
+		}
 
 	while (!stop)
 	{
@@ -240,7 +167,13 @@ int main(int argc, char *argv[]) {
 
 	if(pthread_join(receiver_thread, NULL))
 	{
-		fprintf(stderr, "Error joining thread\n");
+		fprintf(stderr, "Error joining receiver_thread\n");
+		return 0;
+	}
+
+	if(pthread_join(clipboard_reader, NULL))
+	{
+		fprintf(stderr, "Error joining clipboard_reader\n");
 		return 0;
 	}
 

@@ -10,7 +10,18 @@
 #ifndef _LIBCLIPBOARD_H_
 #define _LIBCLIPBOARD_H_
 
-#include "libclipboard-config.h"
+/** Major version of libclipboard **/
+#define LIBCLIPBOARD_VERSION_MAJOR 1
+
+/** Minor version of libclipboard **/
+#define LIBCLIPBOARD_VERSION_MINOR 0
+
+#ifdef _WIN32
+	#define LIBCLIPBOARD_BUILD_WIN32
+#else
+	#define LIBCLIPBOARD_BUILD_X11
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
