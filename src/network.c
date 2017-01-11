@@ -19,8 +19,9 @@ int sock_quit()
 	#endif
 }
 
-void *receiver_thread_func()
+void *network_thread_func()
 {
+	char curr_clip[BUFFER_SIZE] = "";
 	fd_set readfds;
 	SOCKET n;
 	char buffer[BUFFER_SIZE];
@@ -34,17 +35,29 @@ void *receiver_thread_func()
 	FD_SET(sd, &readfds);
 
 	client_length = (int)sizeof(struct sockaddr_in);
-
 	n = sd + 1;
+
+	clipboard_c *cb = clipboard_new(NULL);
+	if (cb == NULL) {
+		printf("Clipboard initialisation failed!\n");
+		return NULL;
+	}
 
 	while (!stop)
 	{
 		res = select(n, &readfds, NULL, NULL, &timeout);
+		int res2 =  WSAGetLastError();
 		if (res == -1) {
 		    perror("select");
-		} else if (res == 0) {
+		    printf("Last WSA error: %d\n", res2);
+		    stop = 1;
+		}
+		else if (res == 0)
+		{
 			/* Continue silently */
-		} else {
+		}
+		else
+		{
 		    if (FD_ISSET(sd, &readfds)) {
 		    	printf("Receiving...\n");
 				/* Receive bytes from client */
@@ -56,6 +69,20 @@ void *receiver_thread_func()
 				printf("Message received: '%s'\n", buffer);
 		    }
 		}
+
+		char *text = clipboard_text_ex(cb, NULL, 0);
+		if (text != NULL)
+		{
+			if (strncmp(text, curr_clip, BUFFER_SIZE))
+			{
+				strncpy(curr_clip, text, BUFFER_SIZE);
+				/* Send to clients */
+				printf("New clip: '%s'\n", curr_clip);
+			}
+			free(text);
+		}
 	}
+
+	clipboard_free(cb);
 	return NULL;
 }

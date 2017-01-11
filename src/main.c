@@ -2,63 +2,62 @@
 
 void usage()
 {
-	fprintf(stderr, "Usage: netclipboard [server_address] port\n");
+	fprintf(stderr, "Usage:\nnetclipboard -s [server_address] port password\nnetclipboard -c [client_address] port server_address password");
 	exit(0);
-}
-
-void *clipboard_reader_func()
-{
-	clipboard_c *cb = clipboard_new(NULL);
-	if (cb == NULL) {
-		printf("Clipboard initialisation failed!\n");
-		return NULL;
-	}
-
-	while (!stop)
-	{
-		pthread_mutex_lock(&curr_clip_lock);
-		char *text = clipboard_text_ex(cb, NULL, 0);
-		if (text != NULL)
-		{
-			if (strncmp(text, curr_clip, BUFFER_SIZE))
-			{
-				strncpy(curr_clip, text, BUFFER_SIZE);
-				/* Send to clients */
-			}
-			free(text);
-		}
-		pthread_mutex_unlock(&curr_clip_lock);
-		sleep(1);
-	}
-
-	clipboard_free(cb);
-	return NULL;
 }
 
 int main(int argc, char *argv[])
 {
 	unsigned short port_number;			/* Port number to use */
 	int a1, a2, a3, a4;					/* Components of address in xxx.xxx.xxx.xxx form */
+	int b1, b2, b3, b4;
 
-	/* Interpret command line */
-	if (argc == 2)
+	printf("argc %d\n", argc);
+	if (argc > 2)
 	{
-		/* Use local address */
-		if (sscanf(argv[1], "%u", &port_number) != 1)
+		// client
+		if ('c' == argv[1][1])
 		{
-			usage();
+			if (argc == 6)
+			{
+				if (sscanf(argv[3], "%u", &port_number) != 1 || sscanf(argv[4], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4 || sscanf(argv[5], "%s", &password) != 1)
+				{
+					usage();
+				}
+			}
+			else if (argc == 7)
+			{
+				if (sscanf(argv[3], "%d.%d.%d.%d", &a1, &a2, &a3, &a4) != 4 || sscanf(argv[4], "%u", &port_number) != 1 || sscanf(argv[5], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4 || sscanf(argv[6], "%s", &password) != 1)
+				{
+					usage();
+				}
+			}
 		}
-	}
-	else if (argc == 3)
-	{
-		/* Copy address */
-		if (sscanf(argv[1], "%d.%d.%d.%d", &a1, &a2, &a3, &a4) != 4)
+		else if ('s' == argv[1][1])
 		{
-			usage();
-		}
-		if (sscanf(argv[2], "%u", &port_number) != 1)
-		{
-			usage();
+			if (argc == 4)
+			{
+
+				if (sscanf(argv[2], "%u", &port_number) != 1)
+				{
+					usage();
+				}
+			}
+			else if (argc == 5)
+			{
+				if (sscanf(argv[2], "%d.%d.%d.%d", &a1, &a2, &a3, &a4) != 4)
+				{
+					usage();
+				}
+				if (sscanf(argv[3], "%u", &port_number) != 1)
+				{
+					usage();
+				}
+			}
+			else
+			{
+				usage();
+			}
 		}
 	}
 	else
@@ -90,7 +89,7 @@ int main(int argc, char *argv[])
 	server.sin_port = htons(port_number);
 
 	/* Set address automatically if desired */
-	if (argc == 2)
+	if ('s' == argv[1][1])
 	{
 		/* Get host name of this computer */
 		gethostname(host_name, sizeof(host_name));
@@ -139,21 +138,14 @@ int main(int argc, char *argv[])
 
 	char input_string[10];
 	int res;
-	pthread_t receiver_thread;
+	stop = 0;
+	pthread_t network_thread;
 
-	pthread_t clipboard_reader;
-
-	if(pthread_create(&receiver_thread, NULL, receiver_thread_func, (void*)NULL))
+	if(pthread_create(&network_thread, NULL, network_thread_func, (void*)NULL))
 	{
 		fprintf(stderr, "Error creating receiver_thread\n");
 		return 0;
 	}
-
-	if(pthread_create(&clipboard_reader, NULL, clipboard_reader_func, (void*)NULL))
-		{
-			fprintf(stderr, "Error creating clipboard_reader\n");
-			return 0;
-		}
 
 	while (!stop)
 	{
@@ -165,15 +157,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if(pthread_join(receiver_thread, NULL))
+	if(pthread_join(network_thread, NULL))
 	{
 		fprintf(stderr, "Error joining receiver_thread\n");
-		return 0;
-	}
-
-	if(pthread_join(clipboard_reader, NULL))
-	{
-		fprintf(stderr, "Error joining clipboard_reader\n");
 		return 0;
 	}
 

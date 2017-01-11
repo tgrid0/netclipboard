@@ -23,15 +23,15 @@
 #define BUFFER_SIZE 4096
 
 pthread_mutex_t curr_clip_lock;
-static char curr_clip[BUFFER_SIZE] = "";
 
-SOCKET sd;							/* Socket descriptor of server */
-static byte stop = 0;
+volatile SOCKET sd;							/* Socket descriptor of server */
+byte stop;
 
 struct sockaddr_in server;			/* Information about the server */
 struct sockaddr_in client;			/* Information about the client */
 struct hostent *hp;					/* Information about this computer */
 char host_name[256];				/* Name of the server */
+char password[20];					/* Sort of security */
 
 #ifdef _WIN32
 void sleep(int t);
@@ -42,6 +42,6 @@ int sock_init();
 
 int sock_quit();
 
-void *receiver_thread_func();
+void *network_thread_func();
 
 #endif /* INCLUDE_NETCLIPBOARD_H_ */
