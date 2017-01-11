@@ -31,20 +31,19 @@ void *network_thread_func()
 	timeout.tv_sec = 10;
 	timeout.tv_usec = 0;
 
-	FD_ZERO(&readfds);
-	FD_SET(sd, &readfds);
-
 	client_length = (int)sizeof(struct sockaddr_in);
-	n = sd + 1;
 
 	clipboard_c *cb = clipboard_new(NULL);
 	if (cb == NULL) {
-		printf("Clipboard initialisation failed!\n");
+		printf("Clipboard initialization failed!\n");
 		return NULL;
 	}
 
 	while (!stop)
 	{
+		FD_ZERO(&readfds);
+		FD_SET(sd, &readfds);
+		n = sd + 1;
 		res = select(n, &readfds, NULL, NULL, &timeout);
 		int res2 =  WSAGetLastError();
 		if (res == -1) {
