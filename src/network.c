@@ -47,7 +47,7 @@ void *network_thread_func()
 		printf("Clipboard initialization failed!\n");
 		return NULL;
 	}
-	byte received_once = 0;
+	char received_once = 0;
 	while (!stop)
 	{
 		FD_ZERO(&readfds);
