@@ -48,12 +48,21 @@ int main(int argc, char *argv[])
 
 	/* Open a datagram socket */
 	sd = socket(AF_INET, SOCK_DGRAM, 0);
+#ifdef _WIN32
 	if (sd == INVALID_SOCKET)
 	{
 		fprintf(stderr, "Could not create socket.\n");
 		sock_quit();
 		exit(0);
 	}
+#else
+	if (sd < 0)
+	{
+		fprintf(stderr, "Could not create socket.\n");
+		sock_quit();
+		exit(0);
+	}
+#endif
 
 	/* Clear out server struct */
 	memset((void *)&host, '\0', sizeof(struct sockaddr_in));
@@ -72,7 +81,7 @@ int main(int argc, char *argv[])
 #else
 	char addr[32];
 	sprintf(addr, "%d.%d.%d.%d", b1, b2, b3, b4);
-	inet_aton(addr, &remote.sin_addr.s_addr);
+	inet_aton(addr, &(remote.sin_addr.s_addr));
 	memset(&addr[0], 0, sizeof(addr));
 	sprintf(addr, "%d.%d.%d.%d", a1, a2, a3, a4);
 #endif
@@ -100,7 +109,7 @@ int main(int argc, char *argv[])
 		host.sin_addr.s_lh = hp->h_addr_list[0][2];
 		host.sin_addr.s_impno = hp->h_addr_list[0][3];
 #else
-		inet_aton(hp->h_addr_list[0], &host.sin_addr.s_addr);
+		inet_aton(hp->h_addr_list[0], &(host.sin_addr.s_addr));
 #endif
 	}
 	/* Otherwise assign it manually */
@@ -112,7 +121,7 @@ int main(int argc, char *argv[])
 		host.sin_addr.s_lh = (unsigned char)a3;
 		host.sin_addr.s_impno = (unsigned char)a4;
 #else
-		inet_aton(addr, &host.sin_addr.s_addr);
+		inet_aton(addr, &(host.sin_addr.s_addr));
 #endif
 	}
 
@@ -124,13 +133,17 @@ int main(int argc, char *argv[])
 		sock_quit();
 		exit(0);
 	}
-
+#ifdef _WIN32
 	/* Print out server information */
 	printf("Server running on %u.%u.%u.%u:%u.\nPassword is '%s'.\n", (unsigned char)host.sin_addr.s_net,
 											  (unsigned char)host.sin_addr.s_host,
 											  (unsigned char)host.sin_addr.s_lh,
 											  (unsigned char)host.sin_addr.s_impno,
 											  host_port, password);
+#else
+	inet_ntop(AF_INET, &(host.sin_addr), addr, 32);
+	printf("Server running on %s:%u.\nPassword is '%s'.\n", addr, host_port, password);
+#endif
 	printf("Type 'stop' to quit.\n");
 
 	char input_string[10];
