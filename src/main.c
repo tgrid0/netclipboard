@@ -2,59 +2,33 @@
 
 void usage()
 {
-	fprintf(stderr, "Usage:\nnetclipboard -s [server_address] port password\nnetclipboard -c [client_address] port server_address password");
+	fprintf(stderr, "Usage:\nnetclipboard [host_address] host_port remote_address remote_port password");
 	exit(0);
 }
 
 int main(int argc, char *argv[])
 {
-	unsigned short port_number;			/* Port number to use */
-	int a1, a2, a3, a4;					/* Components of address in xxx.xxx.xxx.xxx form */
+	unsigned short host_port, remote_port;			/* Port number to use */
+	int a1, a2, a3, a4;								/* Components of address in xxx.xxx.xxx.xxx form */
 	int b1, b2, b3, b4;
 
-	printf("argc %d\n", argc);
-	if (argc > 2)
+	if (argc > 4)
 	{
-		// client
-		if ('c' == argv[1][1])
+		char format[32];
+		snprintf(format, sizeof(format), "%%%ds", (int)(PASSWD_SIZE-1));
+		if (argc == 5)
 		{
-			if (argc == 6)
+			if (sscanf(argv[1], "%hu", &host_port) != 1 || sscanf(argv[2], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4
+					|| sscanf(argv[3], "%hu", &remote_port) != 1 || sscanf(argv[4], format, &password) != 1)
 			{
-				if (sscanf(argv[3], "%u", &port_number) != 1 || sscanf(argv[4], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4 || sscanf(argv[5], "%s", &password) != 1)
-				{
-					usage();
-				}
-			}
-			else if (argc == 7)
-			{
-				if (sscanf(argv[3], "%d.%d.%d.%d", &a1, &a2, &a3, &a4) != 4 || sscanf(argv[4], "%u", &port_number) != 1 || sscanf(argv[5], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4 || sscanf(argv[6], "%s", &password) != 1)
-				{
-					usage();
-				}
+				usage();
 			}
 		}
-		else if ('s' == argv[1][1])
+		else if (argc == 6)
 		{
-			if (argc == 4)
-			{
-
-				if (sscanf(argv[2], "%u", &port_number) != 1)
-				{
-					usage();
-				}
-			}
-			else if (argc == 5)
-			{
-				if (sscanf(argv[2], "%d.%d.%d.%d", &a1, &a2, &a3, &a4) != 4)
-				{
-					usage();
-				}
-				if (sscanf(argv[3], "%u", &port_number) != 1)
-				{
-					usage();
-				}
-			}
-			else
+			if (sscanf(argv[1], "%d.%d.%d.%d", &a1, &a2, &a3, &a4) != 4 || sscanf(argv[2], "%hu", &host_port) != 1
+					|| sscanf(argv[3], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4 || sscanf(argv[4], "%hu", &remote_port) != 1
+					|| sscanf(argv[5], format, &password) != 1)
 			{
 				usage();
 			}
@@ -82,14 +56,22 @@ int main(int argc, char *argv[])
 	}
 
 	/* Clear out server struct */
-	memset((void *)&server, '\0', sizeof(struct sockaddr_in));
+	memset((void *)&host, '\0', sizeof(struct sockaddr_in));
 
 	/* Set family and port */
-	server.sin_family = AF_INET;
-	server.sin_port = htons(port_number);
+	host.sin_family = AF_INET;
+	host.sin_port = htons(host_port);
+
+	remote.sin_family = AF_INET;
+	host.sin_port = htons(remote_port);
+
+	remote.sin_addr.S_un.S_un_b.s_b1 = (unsigned char)b1;
+	remote.sin_addr.S_un.S_un_b.s_b2 = (unsigned char)b2;
+	remote.sin_addr.S_un.S_un_b.s_b3 = (unsigned char)b3;
+	remote.sin_addr.S_un.S_un_b.s_b4 = (unsigned char)b4;
 
 	/* Set address automatically if desired */
-	if ('s' == argv[1][1])
+	if (argc == 5)
 	{
 		/* Get host name of this computer */
 		gethostname(host_name, sizeof(host_name));
@@ -105,22 +87,22 @@ int main(int argc, char *argv[])
 		}
 
 		/* Assign the address */
-		server.sin_addr.S_un.S_un_b.s_b1 = hp->h_addr_list[0][0];
-		server.sin_addr.S_un.S_un_b.s_b2 = hp->h_addr_list[0][1];
-		server.sin_addr.S_un.S_un_b.s_b3 = hp->h_addr_list[0][2];
-		server.sin_addr.S_un.S_un_b.s_b4 = hp->h_addr_list[0][3];
+		host.sin_addr.S_un.S_un_b.s_b1 = hp->h_addr_list[0][0];
+		host.sin_addr.S_un.S_un_b.s_b2 = hp->h_addr_list[0][1];
+		host.sin_addr.S_un.S_un_b.s_b3 = hp->h_addr_list[0][2];
+		host.sin_addr.S_un.S_un_b.s_b4 = hp->h_addr_list[0][3];
 	}
 	/* Otherwise assign it manually */
 	else
 	{
-		server.sin_addr.S_un.S_un_b.s_b1 = (unsigned char)a1;
-		server.sin_addr.S_un.S_un_b.s_b2 = (unsigned char)a2;
-		server.sin_addr.S_un.S_un_b.s_b3 = (unsigned char)a3;
-		server.sin_addr.S_un.S_un_b.s_b4 = (unsigned char)a4;
+		host.sin_addr.S_un.S_un_b.s_b1 = (unsigned char)a1;
+		host.sin_addr.S_un.S_un_b.s_b2 = (unsigned char)a2;
+		host.sin_addr.S_un.S_un_b.s_b3 = (unsigned char)a3;
+		host.sin_addr.S_un.S_un_b.s_b4 = (unsigned char)a4;
 	}
 
 	/* Bind address to socket */
-	if (bind(sd, (struct sockaddr *)&server, sizeof(struct sockaddr_in)) == -1)
+	if (bind(sd, (struct sockaddr *)&host, sizeof(struct sockaddr_in)) == -1)
 	{
 		fprintf(stderr, "Could not bind name to socket.\n");
 		closesocket(sd);
@@ -129,12 +111,12 @@ int main(int argc, char *argv[])
 	}
 
 	/* Print out server information */
-	printf("Server running on %u.%u.%u.%u:%u\n", (unsigned char)server.sin_addr.S_un.S_un_b.s_b1,
-											  (unsigned char)server.sin_addr.S_un.S_un_b.s_b2,
-											  (unsigned char)server.sin_addr.S_un.S_un_b.s_b3,
-											  (unsigned char)server.sin_addr.S_un.S_un_b.s_b4,
-											  port_number);
-	printf("Type 'stop' to quit\n");
+	printf("Server running on %u.%u.%u.%u:%u.\nPassword is '%s'.\n", (unsigned char)host.sin_addr.S_un.S_un_b.s_b1,
+											  (unsigned char)host.sin_addr.S_un.S_un_b.s_b2,
+											  (unsigned char)host.sin_addr.S_un.S_un_b.s_b3,
+											  (unsigned char)host.sin_addr.S_un.S_un_b.s_b4,
+											  host_port, password);
+	printf("Type 'stop' to quit.\n");
 
 	char input_string[10];
 	int res;
@@ -143,7 +125,7 @@ int main(int argc, char *argv[])
 
 	if(pthread_create(&network_thread, NULL, network_thread_func, (void*)NULL))
 	{
-		fprintf(stderr, "Error creating receiver_thread\n");
+		fprintf(stderr, "Error creating receiver_thread.\n");
 		return 0;
 	}
 
@@ -159,7 +141,7 @@ int main(int argc, char *argv[])
 
 	if(pthread_join(network_thread, NULL))
 	{
-		fprintf(stderr, "Error joining receiver_thread\n");
+		fprintf(stderr, "Error joining receiver_thread.\n");
 		return 0;
 	}
 

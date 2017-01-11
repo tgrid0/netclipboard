@@ -28,17 +28,17 @@ void *network_thread_func()
 	int client_length;
 	int res;
 	struct timeval timeout;
-	timeout.tv_sec = 10;
+	timeout.tv_sec = 2;
 	timeout.tv_usec = 0;
 
 	client_length = (int)sizeof(struct sockaddr_in);
-
+	struct sockaddr_in tmp_remote;
 	clipboard_c *cb = clipboard_new(NULL);
 	if (cb == NULL) {
 		printf("Clipboard initialization failed!\n");
 		return NULL;
 	}
-
+	byte received_once = 0;
 	while (!stop)
 	{
 		FD_ZERO(&readfds);
@@ -55,14 +55,19 @@ void *network_thread_func()
 		else
 		{
 		    if (FD_ISSET(sd, &readfds)) {
-		    	printf("Receiving...\n");
+		    	//printf("Receiving...\n");
 				/* Receive bytes from client */
-				res = recvfrom(sd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client, &client_length);
+				res = recvfrom(sd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&tmp_remote, &client_length);
 				if (res < 0)
 				{
 					fprintf(stderr, "Could not receive datagram.\n");
 				}
-				printf("Message received: '%s'\n", buffer);
+				received_once = 1;
+				//printf("Message received: '%s'\n", buffer);
+				memset(&curr_clip[0], 0, sizeof(curr_clip));
+				strncpy(curr_clip, buffer, strlen(buffer));
+				curr_clip[strlen(curr_clip)] = '\0';
+				clipboard_set_text_ex(cb, curr_clip, strlen(curr_clip), 0);
 		    }
 		}
 
@@ -72,8 +77,16 @@ void *network_thread_func()
 			if (strncmp(text, curr_clip, BUFFER_SIZE))
 			{
 				strncpy(curr_clip, text, BUFFER_SIZE);
-				/* Send to clients */
-				printf("New clip: '%s'\n", curr_clip);
+				//printf("New clip: '%s'.\n", curr_clip);
+				/* Send to client */
+				if (received_once)
+				{
+					res = sendto(sd, curr_clip, BUFFER_SIZE, 0, (struct sockaddr*)&remote, sizeof(remote));
+					if (res < 0)
+					{
+						fprintf(stderr, "Could not send datagram.\n");
+					}
+				}
 			}
 			free(text);
 		}

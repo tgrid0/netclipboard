@@ -21,17 +21,22 @@
 #endif
 
 #define BUFFER_SIZE 4096
+#define PASSWD_SIZE 20
 
-pthread_mutex_t curr_clip_lock;
+typedef struct clip_packet
+{
+	char password[PASSWD_SIZE];
+	char clip[BUFFER_SIZE];
+} clip_packet_t;
 
 SOCKET sd;							/* Socket descriptor of server */
 byte stop;
 
-struct sockaddr_in server;			/* Information about the server */
-struct sockaddr_in client;			/* Information about the client */
+struct sockaddr_in host;			/* Information about the server */
+struct sockaddr_in remote;			/* Information about the client */
 struct hostent *hp;					/* Information about this computer */
 char host_name[256];				/* Name of the server */
-char password[20];					/* Sort of security */
+char password[PASSWD_SIZE];			/* Sort of security */
 
 #ifdef _WIN32
 void sleep(int t);
