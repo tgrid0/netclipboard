@@ -6,7 +6,7 @@ int sock_init()
 		WSADATA w;
 		return (0 == WSAStartup(MAKEWORD(1,1), &w));
 	#else
-		return 0;
+		return 1;
 	#endif
 }
 
@@ -15,7 +15,7 @@ int sock_quit()
 	#ifdef _WIN32
 		return WSACleanup();
 	#else
-		return 0;
+		return 1;
 	#endif
 }
 
