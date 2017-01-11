@@ -65,10 +65,10 @@ int main(int argc, char *argv[])
 	remote.sin_family = AF_INET;
 	host.sin_port = htons(remote_port);
 
-	remote.sin_addr.S_un.S_un_b.s_b1 = (unsigned char)b1;
-	remote.sin_addr.S_un.S_un_b.s_b2 = (unsigned char)b2;
-	remote.sin_addr.S_un.S_un_b.s_b3 = (unsigned char)b3;
-	remote.sin_addr.S_un.S_un_b.s_b4 = (unsigned char)b4;
+	remote.sin_addr.s_net = (unsigned char)b1;
+	remote.sin_addr.s_host = (unsigned char)b2;
+	remote.sin_addr.s_lh = (unsigned char)b3;
+	remote.sin_addr.s_impno = (unsigned char)b4;
 
 	/* Set address automatically if desired */
 	if (argc == 5)
@@ -87,18 +87,18 @@ int main(int argc, char *argv[])
 		}
 
 		/* Assign the address */
-		host.sin_addr.S_un.S_un_b.s_b1 = hp->h_addr_list[0][0];
-		host.sin_addr.S_un.S_un_b.s_b2 = hp->h_addr_list[0][1];
-		host.sin_addr.S_un.S_un_b.s_b3 = hp->h_addr_list[0][2];
-		host.sin_addr.S_un.S_un_b.s_b4 = hp->h_addr_list[0][3];
+		host.sin_addr.s_net = hp->h_addr_list[0][0];
+		host.sin_addr.s_host = hp->h_addr_list[0][1];
+		host.sin_addr.s_lh = hp->h_addr_list[0][2];
+		host.sin_addr.s_impno = hp->h_addr_list[0][3];
 	}
 	/* Otherwise assign it manually */
 	else
 	{
-		host.sin_addr.S_un.S_un_b.s_b1 = (unsigned char)a1;
-		host.sin_addr.S_un.S_un_b.s_b2 = (unsigned char)a2;
-		host.sin_addr.S_un.S_un_b.s_b3 = (unsigned char)a3;
-		host.sin_addr.S_un.S_un_b.s_b4 = (unsigned char)a4;
+		host.sin_addr.s_net = (unsigned char)a1;
+		host.sin_addr.s_host = (unsigned char)a2;
+		host.sin_addr.s_lh = (unsigned char)a3;
+		host.sin_addr.s_impno = (unsigned char)a4;
 	}
 
 	/* Bind address to socket */
@@ -111,10 +111,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* Print out server information */
-	printf("Server running on %u.%u.%u.%u:%u.\nPassword is '%s'.\n", (unsigned char)host.sin_addr.S_un.S_un_b.s_b1,
-											  (unsigned char)host.sin_addr.S_un.S_un_b.s_b2,
-											  (unsigned char)host.sin_addr.S_un.S_un_b.s_b3,
-											  (unsigned char)host.sin_addr.S_un.S_un_b.s_b4,
+	printf("Server running on %u.%u.%u.%u:%u.\nPassword is '%s'.\n", (unsigned char)host.sin_addr.s_net,
+											  (unsigned char)host.sin_addr.s_host,
+											  (unsigned char)host.sin_addr.s_lh,
+											  (unsigned char)host.sin_addr.s_impno,
 											  host_port, password);
 	printf("Type 'stop' to quit.\n");
 
