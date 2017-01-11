@@ -64,15 +64,15 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	/* Clear out server struct */
 	memset((void *)&host, '\0', sizeof(struct sockaddr_in));
+	memset((void *)&remote, '\0', sizeof(struct sockaddr_in));
 
 	/* Set family and port */
 	host.sin_family = AF_INET;
 	host.sin_port = htons(host_port);
 
 	remote.sin_family = AF_INET;
-	host.sin_port = htons(remote_port);
+	remote.sin_port = htons(remote_port);
 #ifdef _WIN32
 	remote.sin_addr.s_net = (unsigned char)b1;
 	remote.sin_addr.s_host = (unsigned char)b2;
