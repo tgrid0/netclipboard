@@ -47,12 +47,13 @@ void *network_thread_func()
 		printf("Clipboard initialization failed!\n");
 		return NULL;
 	}
-	char received_once = 0;
 	while (!stop)
 	{
 		FD_ZERO(&readfds);
 		FD_SET(sd, &readfds);
 		n = sd + 1;
+		timeout.tv_sec = 2;
+		timeout.tv_usec = 0;
 		res = select(n, &readfds, NULL, NULL, &timeout);
 		if (res == -1) {
 		    perror("select");
@@ -71,7 +72,6 @@ void *network_thread_func()
 				{
 					fprintf(stderr, "Could not receive datagram.\n");
 				}
-				received_once = 1;
 				//printf("Message received: '%s'\n", buffer);
 				memset(&curr_clip[0], 0, sizeof(curr_clip));
 				strncpy(curr_clip, buffer, strlen(buffer));
@@ -88,14 +88,12 @@ void *network_thread_func()
 				strncpy(curr_clip, text, BUFFER_SIZE);
 				//printf("New clip: '%s'.\n", curr_clip);
 				/* Send to client */
-				if (received_once)
+				res = sendto(sd, curr_clip, BUFFER_SIZE, 0, (struct sockaddr*)&remote, sizeof(remote));
+				if (res < 0)
 				{
-					res = sendto(sd, curr_clip, BUFFER_SIZE, 0, (struct sockaddr*)&remote, sizeof(remote));
-					if (res < 0)
-					{
-						fprintf(stderr, "Could not send datagram.\n");
-					}
+					fprintf(stderr, "Could not send datagram.\n");
 				}
+				//printf("Datagramm sent\n");
 			}
 			free(text);
 		}
