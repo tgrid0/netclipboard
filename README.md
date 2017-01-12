@@ -6,7 +6,7 @@ This is the simple network clipboard.
 
 ## Depency list
 
-* pthread
+* pthread (for Linux)
 * winsock (for Windows)
 * xcb (for Linux)
 

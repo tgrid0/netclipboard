@@ -2,7 +2,7 @@
 
 void usage()
 {
-	fprintf(stderr, "Usage:\nnetclipboard [host_address] host_port remote_address remote_port password");
+	fprintf(stderr, "Usage:\nnetclipboard [host_address] host_port remote_address remote_port");
 	exit(0);
 }
 
@@ -12,23 +12,23 @@ int main(int argc, char *argv[])
 	int a1, a2, a3, a4;								/* Components of address in xxx.xxx.xxx.xxx form */
 	int b1, b2, b3, b4;
 
-	if (argc > 4)
+	if (argc > 3)
 	{
 		char format[32];
 		snprintf(format, sizeof(format), "%%%ds", (int)(PASSWD_SIZE-1));
-		if (argc == 5)
+		if (argc == 4)
 		{
 			if (sscanf(argv[1], "%hu", &host_port) != 1 || sscanf(argv[2], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4
-					|| sscanf(argv[3], "%hu", &remote_port) != 1 || sscanf(argv[4], format, &password) != 1)
+					|| sscanf(argv[3], "%hu", &remote_port) != 1 /*|| sscanf(argv[4], format, &password) != 1*/)  //security is not implemented yet
 			{
 				usage();
 			}
 		}
-		else if (argc == 6)
+		else if (argc == 5)
 		{
 			if (sscanf(argv[1], "%d.%d.%d.%d", &a1, &a2, &a3, &a4) != 4 || sscanf(argv[2], "%hu", &host_port) != 1
 					|| sscanf(argv[3], "%d.%d.%d.%d", &b1, &b2, &b3, &b4) != 4 || sscanf(argv[4], "%hu", &remote_port) != 1
-					|| sscanf(argv[5], format, &password) != 1)
+					/*|| sscanf(argv[5], format, &password) != 1*/)
 			{
 				usage();
 			}
@@ -146,17 +146,25 @@ int main(int argc, char *argv[])
 #endif
 	printf("Type 'stop' to quit.\n");
 
-	char input_string[10];
 	int res;
 	stop = 0;
+#ifdef _WIN32
+	HANDLE network_thread = CreateThread(NULL, 0, network_thread_func, NULL, 0, NULL);
+	if (!network_thread)
+	{
+		fprintf(stderr, "Error creating network_thread.\n");
+		return 0;
+	}
+#else
 	pthread_t network_thread;
 
 	if(pthread_create(&network_thread, NULL, network_thread_func, (void*)NULL))
 	{
-		fprintf(stderr, "Error creating receiver_thread.\n");
+		fprintf(stderr, "Error creating network_thread.\n");
 		return 0;
 	}
-
+#endif
+	char input_string[10];
 	while (!stop)
 	{
 		res = get_line("> ", input_string, sizeof(input_string));
@@ -166,13 +174,21 @@ int main(int argc, char *argv[])
 				stop = 1;
 		}
 	}
-
-	if(pthread_join(network_thread, NULL))
+#ifdef _WIN32
+	DWORD retval;
+	retval = WaitForSingleObject(network_thread, 10 * 1000); // ten seconds
+	if (WAIT_FAILED == retval || WAIT_TIMEOUT == retval)
 	{
-		fprintf(stderr, "Error joining receiver_thread.\n");
+		fprintf(stderr, "Error waiting network_thread.\n");
 		return 0;
 	}
-
+#else
+	if(pthread_join(network_thread, NULL))
+	{
+		fprintf(stderr, "Error joining network_thread.\n");
+		return 0;
+	}
+#endif
 	sock_close(sd);
 	sock_quit();
 

@@ -50,6 +50,10 @@ int sock_quit();
 
 void sock_close();
 
+#ifdef _WIN32
+DWORD WINAPI network_thread_func();
+#else
 void *network_thread_func();
+#endif
 
 #endif /* INCLUDE_NETCLIPBOARD_H_ */

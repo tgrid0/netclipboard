@@ -27,8 +27,11 @@ void sock_close(SOCKET s)
 	close(s);
 #endif
 }
-
+#ifdef _WIN32
+DWORD WINAPI network_thread_func()
+#else
 void *network_thread_func()
+#endif
 {
 	char curr_clip[BUFFER_SIZE] = "";
 	fd_set readfds;
@@ -45,7 +48,11 @@ void *network_thread_func()
 	clipboard_c *cb = clipboard_new(NULL);
 	if (cb == NULL) {
 		printf("Clipboard initialization failed!\n");
+#ifdef _WIN32
+		return 0;
+#else
 		return NULL;
+#endif
 	}
 	while (!stop)
 	{
@@ -100,5 +107,9 @@ void *network_thread_func()
 	}
 
 	clipboard_free(cb);
+#ifdef _WIN32
+	return 0;
+#else
 	return NULL;
+#endif
 }
