@@ -21,7 +21,7 @@ To compile on Linux run these commands:
 ~~~~~
 git clone https://github.com/tgridzero/netclipboard
 cd netclipboard
-gcc src/main.c src/network.c src/util.c src/lib/libclipboard/* -Iinclude/ -lpthread -lxcb
+gcc -std=c99 src/main.c src/network.c src/util.c src/lib/libclipboard/* -Iinclude/ -lpthread -lxcb
 ~~~~~
 
 Windows
