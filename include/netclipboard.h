@@ -17,6 +17,7 @@
 	#include <arpa/inet.h>
 	#include <unistd.h>
 	#include <netdb.h>
+	#include <sys/select.h>		// need for fd_set type
 
 	typedef int SOCKET;
 #endif
