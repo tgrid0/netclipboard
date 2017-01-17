@@ -24,20 +24,16 @@
 
 #define BUFFER_SIZE 4096
 #define PASSWD_SIZE 20
+#define REFRESH_TIME_SEC 2
 
-typedef struct clip_packet
+typedef struct thread_params
 {
+	SOCKET sd;
+	struct sockaddr_in remote;
 	char password[PASSWD_SIZE];
-	char clip[BUFFER_SIZE];
-} clip_packet_t;
+} thread_params_t;
 
-SOCKET sd;							/* Socket descriptor of server */
 char stop;
-
-struct sockaddr_in host;			/* Information about the server */
-struct sockaddr_in remote;			/* Information about the client */
-char host_name[256];				/* Name of the server */
-char password[PASSWD_SIZE];			/* Sort of security */
 
 #ifdef _WIN32
 void sleep(int t);
@@ -45,15 +41,15 @@ void sleep(int t);
 int get_line(char *prmpt, char *buff, size_t sz);
 
 int sock_init();
-
+int sock_open();
 int sock_quit();
-
 void sock_close();
+void sockaddr_fill(struct sockaddr_in* sin, int sin_family, int port, int oct1, int oct2, int oct3, int oct4);
 
 #ifdef _WIN32
-DWORD WINAPI network_thread_func();
+DWORD WINAPI network_thread_func(LPVOID lpParam);
 #else
-void *network_thread_func();
+void *network_thread_func(void* p);
 #endif
 
 #endif /* INCLUDE_NETCLIPBOARD_H_ */
