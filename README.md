@@ -12,22 +12,20 @@ This is the simple network clipboard.
 
 ## Building
 
-There is no makefile at the moment.
-
-Linux
-
-To compile on Linux run these commands:
+To compile on Linux, run these commands:
 
 ~~~~~
-git clone https://github.com/tgridzero/netclipboard
+git clone https://github.com/tgrid0/netclipboard
 cd netclipboard
-gcc -std=c99 src/main.c src/network.c src/util.c src/lib/libclipboard/* -Iinclude/ -lpthread -lxcb
+make all
 ~~~~~
 
-Windows
+On Windows you can use [MinGW-w64](https://sourceforge.net/projects/mingw-w64/):
 
-Clone project via git or download archive.
-Open it in your favorite IDE, open build settings, add 'include' directory to includes, and 'wsock32' to libraries.
+~~~~
+mingw32-make all
+~~~~
+
 
 ## Used 3rd-party
 
